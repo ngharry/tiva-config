@@ -10,12 +10,12 @@ include ${ROOT}/makedefs
 
 IPATH = ${ROOT}
 
+SCATTERgcc_${TARGET} = ${PART}.ld
+ENTRY_${TARGET} = ResetISR
+CFFLAGSgcc = -DTARGET_IS_TM4C123_RB1
+
 all: ${COMPILER}
 all: ${COMPILER}/$(TARGET).axf
-
-.PHONY: clean
-clean: 
-	@rm -rf ${COMPILER} ${wildcard *~}
 
 ${COMPILER}:
 	@mkdir -p ${COMPILER}
@@ -24,11 +24,14 @@ ${COMPILER}/${TARGET}.axf:  ${COMPILER}/${TARGET}.o \
  							${COMPILER}/startup_${COMPILER}.o \
  							${ROOT}/driverlib/${COMPILER}/libdriver.a \
  							${PART}.ld
-
-SCATTERgcc_${TARGET} = ${PART}.ld
-ENTRY_${TARGET} = ResetISR
-CFFLAGSgcc = -DTARGET_IS_TM4C123_RB1
+.PHONY: configure
+configure:
+	curl -O https://raw.githubusercontent.com/ngharry/tiva-config/master/tiva-config/startup_gcc.c
+	curl -O https://raw.githubusercontent.com/ngharry/tiva-config/master/tiva-config/tm4c123gxl.ld
+.PHONY: clean
+clean: 
+	@rm -rf ${COMPILER} ${wildcard *~}
 
 ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard ${COMPILER}/*.d} __dummy__
-endif 
+endif
