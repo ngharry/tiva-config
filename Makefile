@@ -26,8 +26,9 @@ ${COMPILER}/${TARGET}.axf:  ${COMPILER}/${TARGET}.o \
  							${PART}.ld
 .PHONY: configure
 configure:
-	curl -O https://raw.githubusercontent.com/ngharry/tiva-config/master/tiva-config/startup_gcc.c
-	curl -O https://raw.githubusercontent.com/ngharry/tiva-config/master/tiva-config/tm4c123gxl.ld
+	@curl -OO https://raw.githubusercontent.com/ngharry/tiva-config\
+	/master/tiva-config/{startup_gcc.c,${PART}.ld}
+
 .PHONY: clean
 clean: 
 	@rm -rf ${COMPILER} ${wildcard *~}
