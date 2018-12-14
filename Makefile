@@ -1,13 +1,19 @@
-TARGET = main
+m Target to be built.
+TARGET ?= main
 
-# COMPILER := gcc
-
+# Part's name.
 PART = tm4c123gxl
 
+# Base directory to TivaWare.
 ROOT = ${HOME}/dev/embedded/tiva
 
+#
+# ${ROOT}/makedefs includes implicit rules and variables for building
+# a TIVA's project.
+#
 include ${ROOT}/makedefs
 
+# Where to find header files which do not live in the project.
 IPATH = ${ROOT}
 
 SCATTERgcc_${TARGET} = ${PART}.ld
@@ -24,6 +30,11 @@ ${COMPILER}/${TARGET}.axf:  ${COMPILER}/${TARGET}.o \
  							${COMPILER}/startup_${COMPILER}.o \
  							${ROOT}/driverlib/${COMPILER}/libdriver.a \
  							${PART}.ld
+#
+# Download necessary files from my GitHub.
+# Includes: startup_gcc.c
+#			tm4c123gxl.ld
+#
 .PHONY: configure
 configure:
 	@curl -OO https://raw.githubusercontent.com/ngharry/tiva-config\
@@ -33,6 +44,7 @@ configure:
 clean: 
 	@rm -rf ${COMPILER} ${wildcard *~}
 
+# Dependencies
 ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard ${COMPILER}/*.d} __dummy__
 endif
