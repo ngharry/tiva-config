@@ -1,4 +1,4 @@
-m Target to be built.
+# Target to be built.
 TARGET ?= main
 
 # Part's name.
