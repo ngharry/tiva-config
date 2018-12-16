@@ -5,31 +5,28 @@ TARGET ?= main
 PART = tm4c123gxl
 
 # Base directory to TivaWare.
-ROOT = ${HOME}/dev/embedded/tiva
+TIVAWARE = ${HOME}/dev/embedded/tiva
 
 #
-# ${ROOT}/makedefs includes implicit rules and variables for building
+# ${TIVAWARE}/makedefs includes implicit rules and variables for building
 # a TIVA's project.
 #
-include ${ROOT}/makedefs
+include ${TIVAWARE}/makedefs
 
 # Where to find header files which do not live in the project.
-IPATH = ${ROOT}
+IPATH = ${TIVAWARE}
 
 SCATTERgcc_${TARGET} = ${PART}.ld
 ENTRY_${TARGET} = ResetISR
 CFFLAGSgcc = -DTARGET_IS_TM4C123_RB1
 
-all: ${COMPILER}
-all: ${COMPILER}/$(TARGET).axf
+all: gcc/$(TARGET).axf
 
-${COMPILER}:
-	@mkdir -p ${COMPILER}
-
-${COMPILER}/${TARGET}.axf:  ${COMPILER}/${TARGET}.o \
- 							${COMPILER}/startup_${COMPILER}.o \
- 							${ROOT}/driverlib/${COMPILER}/libdriver.a \
- 							${PART}.ld
+gcc/${TARGET}.axf: gcc/${TARGET}.o
+gcc/${TARGET}.axf: gcc/startup_gcc.o 
+gcc/${TARGET}.axf: ${TIVAWARE}/driverlib/gcc/libdriver.a
+gcc/${TARGET}.axf: ${PART}.ld
+	
 #
 # Download necessary files from my GitHub.
 # Includes: startup_gcc.c
@@ -37,14 +34,19 @@ ${COMPILER}/${TARGET}.axf:  ${COMPILER}/${TARGET}.o \
 #
 .PHONY: configure
 configure:
+	Configuring...
+	@mkdir -p gcc
 	@curl -OO https://raw.githubusercontent.com/ngharry/tiva-config\
 	/master/tiva-config/{startup_gcc.c,${PART}.ld}
+	Finished.
 
 .PHONY: clean
-clean: 
-	@rm -rf ${COMPILER} ${wildcard *~}
+clean:
+	Cleaning...
+	@rm -rf gcc ${wildcard *~}
+	Finished.
 
 # Dependencies
 ifneq (${MAKECMDGOALS},clean)
--include ${wildcard ${COMPILER}/*.d} __dummy__
+-include ${wildcard gcc/*.d} __dummy__
 endif
