@@ -40,6 +40,15 @@ configure:
 	/master/tiva-config/{startup_gcc.c,${PART}.ld}
 	@echo Finished.
 
+#
+# Flash code to Tiva C
+#
+.PHONY: flash
+flash:
+	@echo Flashing to target...
+	@lm4flash gcc/${TARGET}.bin
+	@echo Loaded to TM4C123GXL.
+
 .PHONY: clean
 clean:
 	@echo Cleaning...
