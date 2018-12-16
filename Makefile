@@ -26,7 +26,7 @@ gcc/${TARGET}.axf: gcc/${TARGET}.o
 gcc/${TARGET}.axf: gcc/startup_gcc.o 
 gcc/${TARGET}.axf: ${TIVAWARE}/driverlib/gcc/libdriver.a
 gcc/${TARGET}.axf: ${PART}.ld
-	
+
 #
 # Download necessary files from my GitHub.
 # Includes: startup_gcc.c
@@ -34,17 +34,17 @@ gcc/${TARGET}.axf: ${PART}.ld
 #
 .PHONY: configure
 configure:
-	Configuring...
+	@echo Configuring...
 	@mkdir -p gcc
 	@curl -OO https://raw.githubusercontent.com/ngharry/tiva-config\
 	/master/tiva-config/{startup_gcc.c,${PART}.ld}
-	Finished.
+	@echo Finished.
 
 .PHONY: clean
 clean:
-	Cleaning...
+	@echo Cleaning...
 	@rm -rf gcc ${wildcard *~}
-	Finished.
+	@echo Finished.
 
 # Dependencies
 ifneq (${MAKECMDGOALS},clean)
