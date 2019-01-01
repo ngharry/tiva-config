@@ -1,61 +1,122 @@
-# Target to be built.
-TARGET ?= main
+#
+# User Configuration
+#
+TARGET = main
 
-# Part's name.
-PART = tm4c123gxl
+MCU = tm4c123gxl
 
-# Base directory to TivaWare.
-TIVAWARE = ${HOME}/dev/embedded/tiva
+# Path to Tiva software
+TIVAPATH = $(HOME)/dev/embedded/tiva
+
+OUTDIR = build
+
+# Path to header files
+IPATH = inc
+IPATH += ${TIVAPATH}
+
+# If $(quiet) is empty, the whole command will be printed.
+# If it is set to "quiet_", only the short version will be printed.
+# If it is set to "silent_", nothing will be printed at all, since
+# the variable $(silent_cmd_cc_o_c) doesn't exist.
+# -------
+# Taken from Linux Makefile
+Q = quiet_
+
+# End of User Configuration
 
 #
-# ${TIVAWARE}/makedefs includes implicit rules and variables for building
-# a TIVA's project.
+# Fixed Configuration (Should Not Be Changed!)
 #
-include ${TIVAWARE}/makedefs
+PREFIX = arm-none-eabi
 
-# Where to find header files which do not live in the project.
-IPATH = ${TIVAWARE}
+CC = ${PREFIX}-gcc
+LD = ${PREFIX}-ld
+OBJCOPY = ${PREFIX}-objcopy
 
-SCATTERgcc_${TARGET} = ${PART}.ld
-ENTRY_${TARGET} = ResetISR
-CFFLAGSgcc = -DTARGET_IS_TM4C123_RB1
+MKDIR = mkdir -p
 
-all: gcc/$(TARGET).axf
+CPU = -mcpu=cortex-m4
+FPU = -mfpu=fpv4-sp-d16 -mfloat-abi=hard
 
-gcc/${TARGET}.axf: gcc/${TARGET}.o
-gcc/${TARGET}.axf: gcc/startup_gcc.o 
-gcc/${TARGET}.axf: ${TIVAWARE}/driverlib/gcc/libdriver.a
-gcc/${TARGET}.axf: ${PART}.ld
+CFLAGS = -mthumb ${CPU} ${FPU}
+CFLAGS += -ffunction-sections -fdata-sections -MD -std=c99 -Wall
+CFLAGS += -pedantic -DPART_$(MCU) -c
+CFLAGS += -DTARGET_IS_TM4C123_RB1
+CFLAGS += ${patsubst %,-I%,${subst :, ,${IPATH}}}
+
+# For debug information in ${TARGET}.axf
+ifdef DEBUG
+	CFLAGS += -g -D DEBUG -O0
+else
+	CFLAGS += -Os
+endif
+
+LDSCRIPT = $(MCU).ld
+LDFLAGS = -T ${LDSCRIPT} --entry ResetISR --gc-sections
+LIBDRIVER = ${TIVAPATH}/driverlib/gcc/libdriver.a
 
 #
-# Download necessary files from my GitHub.
-# Includes: startup_gcc.c
-#			tm4c123gxl.ld
+# Building rules
 #
-.PHONY: configure
-configure:
+quiet_COMPILE_RULE = Compiling $^...
+COMPILE_RULE = $(CC) -o $@ $^ $(CFLAGS)
+
+quiet_LINK_RULE = Linking $^...
+LINK_RULE = $(LD) -o $@ $^ ${LIBDRIVER} $(LDFLAGS) # Rule for linking
+
+quiet_BIN_RULE = Dumping $^...
+BIN_RULE = $(OBJCOPY) -O binary $< $@
+
+SOURCES = $(wildcard src/**/*.c src/*.c)
+OBJECTS = $(addprefix $(OUTDIR)/,$(notdir $(SOURCES:.c=.o)))
+
+# End if fixed configuration
+
+#
+# Building 
+#
+all: $(OUTDIR)/$(TARGET).bin
+
+$(OUTDIR)/%.o: src/%.c
+	@echo ${${Q}COMPILE_RULE}
+	@${COMPILE_RULE}
+
+$(OUTDIR)/$(TARGET).axf: $(OBJECTS)
+	@echo ${${Q}LINK_RULE}
+	@${LINK_RULE}
+
+$(OUTDIR)/$(TARGET).bin: $(OUTDIR)/$(TARGET).axf
+	@echo ${${Q}BIN_RULE}
+	@${BIN_RULE}
+
+config:
 	@echo Configuring...
-	@mkdir -p gcc
-	@curl -OO https://raw.githubusercontent.com/ngharry/tiva-config\
-	/master/tiva-config/{startup_gcc.c,${PART}.ld}
+	@echo Creating ${OUTDIR}...
+	@${MKDIR} $(OUTDIR)
+
+	@echo Downloading startup_gcc.c to src/...
+	@(cd src/ && curl -O https://raw.githubusercontent.com/ngharry/tiva-config\
+	/master/tiva-config/startup_gcc.c)
+
+	@echo Downloading ${MCU}.ld...
+	@curl -O https://raw.githubusercontent.com/ngharry/tiva-config\
+	/master/tiva-config/${MCU}.ld
+
 	@echo Finished.
 
-#
-# Flash code to Tiva C
-#
-.PHONY: flash
 flash:
-	@echo Flashing to target...
-	@lm4flash gcc/${TARGET}.bin
-	@echo Loaded to TM4C123GXL.
+	@echo Flashing to ${MCU}...
+	@lm4flash build/${TARGET}.bin
+	@echo Loaded to ${MCU}
 
-.PHONY: clean
 clean:
-	@echo Cleaning...
-	@rm -rf gcc ${wildcard *~}
+	@echo Cleaning $(OUTDIR)/*...
+	@$(RM) $(OUTDIR)/*
 	@echo Finished.
 
-# Dependencies
+.PHONY: all clean
+
+# Header dependencies
 ifneq (${MAKECMDGOALS},clean)
 -include ${wildcard gcc/*.d} __dummy__
 endif
